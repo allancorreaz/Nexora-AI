@@ -9,6 +9,7 @@ type SidebarProps = {
   activeConversationId: string | null;
   onNewConversation: () => void;
   onSelectConversation: (id: string) => void;
+  onDeleteConversation: (id: string) => void;
 };
 
 const navigation = [
@@ -23,6 +24,7 @@ export default function Sidebar({
   activeConversationId,
   onNewConversation,
   onSelectConversation,
+  onDeleteConversation,
 }: SidebarProps) {
   const [activeItem, setActiveItem] = useState("chat");
 
@@ -33,6 +35,7 @@ export default function Sidebar({
         <h2 className="text-xl font-bold tracking-tight">
           Nexora <span className="text-indigo-400">AI</span>
         </h2>
+
         <p className="mt-1 text-xs text-zinc-500">
           Inteligência e conhecimento
         </p>
@@ -53,7 +56,10 @@ export default function Sidebar({
       </div>
 
       {/* Navegação */}
-      <nav aria-label="Navegação principal" className="space-y-1 px-3">
+      <nav
+        aria-label="Navegação principal"
+        className="space-y-1 px-3"
+      >
         {navigation.map((item) => (
           <button
             key={item.id}
@@ -73,35 +79,72 @@ export default function Sidebar({
         ))}
       </nav>
 
-      {/* Histórico */}
+      {/* Histórico de conversas */}
       <div className="mt-6 flex min-h-0 flex-1 flex-col px-3">
         <h3 className="mb-3 px-4 text-xs font-semibold uppercase tracking-wider text-zinc-500">
           Histórico
         </h3>
 
-        <div className="flex-1 space-y-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">
           {conversations.length === 0 ? (
             <p className="px-4 py-3 text-xs text-zinc-500">
               Nenhuma conversa iniciada.
             </p>
           ) : (
             conversations.map((conversation) => (
-              <button
+              <div
                 key={conversation.id}
-                type="button"
-                onClick={() => {
-                  setActiveItem("chat");
-                  onSelectConversation(conversation.id);
-                }}
-                className={`w-full truncate rounded-lg px-4 py-3 text-left text-sm transition-colors ${
+                className={`group flex items-center gap-1 rounded-lg pr-2 transition-colors ${
                   activeConversationId === conversation.id
-                    ? "bg-zinc-800 text-white"
-                    : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                    ? "bg-zinc-800"
+                    : "hover:bg-zinc-900"
                 }`}
-                title={conversation.title}
               >
-                {conversation.title}
-              </button>
+                {/* Selecionar conversa */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveItem("chat");
+                    onSelectConversation(conversation.id);
+                  }}
+                  className={`min-w-0 flex-1 truncate px-4 py-3 text-left text-sm ${
+                    activeConversationId === conversation.id
+                      ? "text-white"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                  title={conversation.title}
+                >
+                  {conversation.title}
+                </button>
+
+                {/* Excluir conversa */}
+                <button
+                  type="button"
+                  onClick={() => onDeleteConversation(conversation.id)}
+                  aria-label={`Excluir conversa ${conversation.title}`}
+                  title="Excluir conversa"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-red-500/10 hover:text-red-400 focus-visible:outline-2 focus-visible:outline-indigo-400"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4h8v2" />
+                    <path d="M19 6l-1 14H6L5 6" />
+                    <path d="M10 10v7" />
+                    <path d="M14 10v7" />
+                  </svg>
+                </button>
+              </div>
             ))
           )}
         </div>

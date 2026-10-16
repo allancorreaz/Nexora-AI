@@ -14,13 +14,18 @@ import {
 } from "@/lib/chat-storage";
 
 export default function ChatWorkspace() {
+  // Armazena todas as conversas.
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeConversationId, setActiveConversationId] =
-    useState<string | null>(null);
 
+  // Identifica a conversa selecionada.
+  const [activeConversationId, setActiveConversationId] = useState<
+    string | null
+  >(null);
+
+  // Controla a inicialização do histórico.
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Recupera o histórico quando o componente é montado.
+  // Recupera as conversas salvas no navegador.
   useEffect(() => {
     const saved = loadConversations();
 
@@ -28,13 +33,14 @@ export default function ChatWorkspace() {
     setIsLoaded(true);
   }, []);
 
-  // Salva somente depois que o histórico foi carregado.
+  // Salva automaticamente as alterações no histórico.
   useEffect(() => {
     if (!isLoaded) return;
 
     saveConversations(conversations);
   }, [conversations, isLoaded]);
 
+  // Cria uma nova conversa vazia.
   function createConversation() {
     const now = new Date().toISOString();
     const id = crypto.randomUUID();
@@ -51,27 +57,62 @@ export default function ChatWorkspace() {
     setActiveConversationId(id);
   }
 
+  // Exclui uma conversa mediante confirmação.
+  function deleteConversation(conversationId: string) {
+    const conversation = conversations.find(
+      (item) => item.id === conversationId
+    );
+
+    if (!conversation) return;
+
+    const confirmed = window.confirm(
+      `Tem certeza de que deseja excluir a conversa "${conversation.title}"?\n\nEsta ação não poderá ser desfeita.`
+    );
+
+    if (!confirmed) return;
+
+    // Remove somente a conversa selecionada.
+    setConversations((previous) =>
+      previous.filter(
+        (item) => item.id !== conversationId
+      )
+    );
+
+    // Limpa a seleção se a conversa excluída estiver aberta.
+    if (activeConversationId === conversationId) {
+      setActiveConversationId(null);
+    }
+  }
+
+  // Adiciona uma mensagem à conversa atual.
   function addMessage(content: string) {
+    const trimmedContent = content.trim();
+
+    if (!trimmedContent) return;
+
     const now = new Date().toISOString();
 
     const message: Message = {
       id: crypto.randomUUID(),
       role: "user",
-      content,
+      content: trimmedContent,
       createdAt: now,
     };
 
+    // Cria automaticamente uma conversa, caso não exista uma ativa.
     if (!activeConversationId) {
       const conversationId = crypto.randomUUID();
 
+      const newConversation: Conversation = {
+        id: conversationId,
+        title: trimmedContent.slice(0, 40),
+        messages: [message],
+        createdAt: now,
+        updatedAt: now,
+      };
+
       setConversations((previous) => [
-        {
-          id: conversationId,
-          title: content.slice(0, 40),
-          messages: [message],
-          createdAt: now,
-          updatedAt: now,
-        },
+        newConversation,
         ...previous,
       ]);
 
@@ -79,6 +120,7 @@ export default function ChatWorkspace() {
       return;
     }
 
+    // Adiciona a mensagem à conversa selecionada.
     setConversations((previous) =>
       previous.map((conversation) => {
         if (conversation.id !== activeConversationId) {
@@ -90,7 +132,7 @@ export default function ChatWorkspace() {
         return {
           ...conversation,
           title: isFirstMessage
-            ? content.slice(0, 40)
+            ? trimmedContent.slice(0, 40)
             : conversation.title,
           messages: [...conversation.messages, message],
           updatedAt: now,
@@ -99,12 +141,13 @@ export default function ChatWorkspace() {
     );
   }
 
+  // Localiza a conversa ativa.
   const activeConversation =
     conversations.find(
       (conversation) => conversation.id === activeConversationId
     ) ?? null;
 
-  // Evita exibir a interface antes da recuperação do histórico.
+  // Aguarda a recuperação do histórico.
   if (!isLoaded) {
     return (
       <div className="flex h-screen items-center justify-center bg-zinc-950 text-zinc-400">
@@ -120,6 +163,7 @@ export default function ChatWorkspace() {
         activeConversationId={activeConversationId}
         onNewConversation={createConversation}
         onSelectConversation={setActiveConversationId}
+        onDeleteConversation={deleteConversation}
       />
 
       <Chat
