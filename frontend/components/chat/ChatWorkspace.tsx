@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -8,10 +7,7 @@ import Chat from "@/components/chat/Chat";
 
 import type { Conversation, Message } from "@/types/chat";
 
-import {
-  loadConversations,
-  saveConversations,
-} from "@/lib/chat-storage";
+import { loadConversations, saveConversations } from "@/lib/chat-storage";
 
 export default function ChatWorkspace() {
   // Armazena todas as conversas.
@@ -25,12 +21,16 @@ export default function ChatWorkspace() {
   // Controla a inicialização do histórico.
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Recupera as conversas salvas no navegador.
+  // Recupera o histórico após a montagem do componente.
   useEffect(() => {
-    const saved = loadConversations();
+    const timeoutId = window.setTimeout(() => {
+      const saved = loadConversations();
 
-    setConversations(saved);
-    setIsLoaded(true);
+      setConversations(saved);
+      setIsLoaded(true);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   // Salva automaticamente as alterações no histórico.
@@ -60,22 +60,20 @@ export default function ChatWorkspace() {
   // Exclui uma conversa mediante confirmação.
   function deleteConversation(conversationId: string) {
     const conversation = conversations.find(
-      (item) => item.id === conversationId
+      (item) => item.id === conversationId,
     );
 
     if (!conversation) return;
 
     const confirmed = window.confirm(
-      `Tem certeza de que deseja excluir a conversa "${conversation.title}"?\n\nEsta ação não poderá ser desfeita.`
+      `Tem certeza de que deseja excluir a conversa "${conversation.title}"?\n\nEsta ação não poderá ser desfeita.`,
     );
 
     if (!confirmed) return;
 
     // Remove somente a conversa selecionada.
     setConversations((previous) =>
-      previous.filter(
-        (item) => item.id !== conversationId
-      )
+      previous.filter((item) => item.id !== conversationId),
     );
 
     // Limpa a seleção se a conversa excluída estiver aberta.
@@ -111,12 +109,9 @@ export default function ChatWorkspace() {
         updatedAt: now,
       };
 
-      setConversations((previous) => [
-        newConversation,
-        ...previous,
-      ]);
-
+      setConversations((previous) => [newConversation, ...previous]);
       setActiveConversationId(conversationId);
+
       return;
     }
 
@@ -137,14 +132,14 @@ export default function ChatWorkspace() {
           messages: [...conversation.messages, message],
           updatedAt: now,
         };
-      })
+      }),
     );
   }
 
   // Localiza a conversa ativa.
   const activeConversation =
     conversations.find(
-      (conversation) => conversation.id === activeConversationId
+      (conversation) => conversation.id === activeConversationId,
     ) ?? null;
 
   // Aguarda a recuperação do histórico.
