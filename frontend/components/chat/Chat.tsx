@@ -133,6 +133,8 @@ export default function Chat({
                 key={message.id}
                 role={message.role}
                 content={message.content}
+                model={message.model}
+                generationMs={message.generationMs}
               />
             ))}
 
