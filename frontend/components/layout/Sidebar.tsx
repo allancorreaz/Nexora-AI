@@ -159,7 +159,7 @@ export default function Sidebar({
       {!collapsed && (
         <div className="mt-7 flex min-h-0 flex-1 flex-col px-3">
           <div className="mb-3 flex items-center justify-between px-3">
-            <h3 className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+            <h3 className="text-[11px] font-semibold tracking-widest text-zinc-500 uppercase">
               Histórico
             </h3>
 
@@ -205,7 +205,7 @@ export default function Sidebar({
                     onClick={() => onDeleteConversation(conversation.id)}
                     aria-label={`Excluir conversa ${conversation.title}`}
                     title="Excluir conversa"
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 opacity-70 transition-colors hover:bg-red-500/10 hover:text-red-400 focus-visible:opacity-100 group-hover:opacity-100"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 opacity-70 transition-colors group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-400 focus-visible:opacity-100"
                   >
                     <Trash2 size={15} />
                   </button>

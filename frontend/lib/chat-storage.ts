@@ -1,16 +1,10 @@
-
 import type { Conversation } from "@/types/chat";
 
 const STORAGE_KEY = "nexora-ai:conversations";
 
-export function saveConversations(
-  conversations: Conversation[]
-): void {
+export function saveConversations(conversations: Conversation[]): void {
   try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(conversations)
-    );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
   } catch (error) {
     console.error("Erro ao salvar conversas:", error);
   }
@@ -36,7 +30,7 @@ export function loadConversations(): Conversation[] {
         item !== null &&
         typeof item.id === "string" &&
         typeof item.title === "string" &&
-        Array.isArray(item.messages)
+        Array.isArray(item.messages),
     );
   } catch (error) {
     console.error("Erro ao carregar conversas:", error);
