@@ -177,7 +177,7 @@ export default function Sidebar({
             </span>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">
+          <div className="nexora-scrollbar-hidden min-h-0 flex-1 space-y-1 overflow-y-auto">
             {conversations.length === 0 ? (
               <p className="px-3 py-4 text-xs text-zinc-500">
                 Nenhuma conversa iniciada.
