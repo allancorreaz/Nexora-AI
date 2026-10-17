@@ -46,6 +46,7 @@ def build_checks(profile: str) -> list[tuple[str, Path, list[str]]]:
     )
     typecheck = ("Frontend: TypeScript", FRONTEND, [npm, "run", "typecheck"])
     lint = ("Frontend: ESLint", FRONTEND, [npm, "run", "lint"])
+    autoformat = ("Frontend: formatacao automatica", FRONTEND, [npm, "run", "format"])
     formatting = ("Frontend: Prettier", FRONTEND, [npm, "run", "format:check"])
     build = ("Frontend: build de producao", FRONTEND, [npm, "run", "build"])
     audit = ("Dependencias: auditoria de producao", FRONTEND, [npm, "audit", "--omit=dev"])
@@ -53,7 +54,7 @@ def build_checks(profile: str) -> list[tuple[str, Path, list[str]]]:
     profiles = {
         "backend": [backend],
         "frontend": [typecheck, lint, formatting],
-        "quick": [backend, typecheck, lint],
+        "quick": [autoformat, backend, typecheck, lint],
         "security": [audit],
         "full": [backend, typecheck, lint, formatting, build, audit],
     }
