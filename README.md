@@ -151,6 +151,7 @@ A URL padrão da API no frontend é `http://127.0.0.1:8000`. Para alterá-la, co
 | `GET` | `/health/ai` | Verifica comunicação com o Ollama e presença do modelo configurado; responde HTTP 503 se indisponível |
 | `POST` | `/api/chat` | Envia até 30 mensagens e recebe uma resposta completa |
 | `POST` | `/api/documents/preview` | Recebe um arquivo de até 5 MB, extrai texto e devolve uma prévia sem salvar ou indexar |
+| `POST` | `/api/documents/web/preview` | Testa extração de texto de um artigo público de ajuda Alterdata, sem persistência |
 | `POST` | `/api/documents` | Importa documento com `file`, `category` e `system` (multipart), persiste texto e metadados no SQLite |
 | `GET` | `/api/documents` | Lista documentos sem expor o texto completo; aceita `category` e `limit` |
 | `GET` | `/api/documents/{document_id}` | Consulta metadados e texto de um documento |
@@ -183,6 +184,20 @@ A tela permite listar documentos, filtrar por categoria, abrir o texto extraído
 O módulo `backend/app/document_repository.py` cria, sob demanda, o arquivo `backend/data/knowledge.sqlite3`, **ignorado pelo Git**. Ele mantém ID, nome, categoria (`transcricao`, `documentacao` ou `outro`), sistema de origem, tipo, hash SHA-256, quantidade de caracteres, data de importação e texto extraído. Arquivos binários originais não são armazenados. Arquivos binários idênticos são rejeitados como duplicados.
 
 **Situação:** o repositório SQLite está conectado à API de importação, consulta, listagem e exclusão. `POST /api/documents/preview` continua sendo **apenas uma prévia**, sem persistência. Para importar, use a documentação interativa em `/docs`, selecione `POST /api/documents`, informe `category` (`transcricao`, `documentacao` ou `outro`), `system` e um arquivo. O arquivo original não é guardado, apenas seu texto extraído. **O SQLite local não oferece criptografia em repouso nem autenticação**, e essas rotas ainda não contam com controle de acesso; mantenha a API restrita a `127.0.0.1` e não importe informações confidenciais sem controles e autorização. A indexação RAG continua planejada.
+
+### Teste inicial de documentação por URL
+
+O endpoint `POST /api/documents/web/preview` aceita **artigos públicos individuais** em `https://ajuda.alterdata.com.br/bimerbase/...` ou `/bimer/...`. Para testar, com o FastAPI local ligado, abra `http://127.0.0.1:8000/docs`, expanda a rota, clique em *Try it out* e envie:
+
+```json
+{
+  "url": "https://ajuda.alterdata.com.br/bimerbase/bimer-instalacao/como-instalar-o-bimer-em-uma-nova-estacao"
+}
+```
+
+A resposta contém o título, a origem, uma prévia do texto e `saved: false`. Esse recurso **não importa sites inteiros**, não indexa conteúdo e não acessa páginas protegidas por login. A página inicial `/bimerbase` é um catálogo e não pode ser importada como artigo nesta etapa. A leitura é limitada a páginas HTML de um domínio permitido, sem seguir redirecionamentos e com limite de 1,5 MB. Testes automatizados não fazem solicitações externas; a extração real deve ser validada manualmente. Respeite permissões e condições de uso do conteúdo de terceiros.
+
+**Movidesk Flex Smart:** integração autenticada, autorização e mapeamento de artigos/telas/açōes permanecem planejados. Nunca registre senhas, cookies ou tokens no repositório. **AD corporativo:** planejado, sem conexão nem credenciais implementadas; não exponha endpoints administrativos à rede antes da autenticação e da autorização por perfil.
 
 ## Executar testes
 
