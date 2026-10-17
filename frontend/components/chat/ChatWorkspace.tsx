@@ -13,6 +13,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 type ChatApiResponse = {
   response: string;
   model: string;
+  generation_ms: number;
 };
 
 export default function ChatWorkspace() {
@@ -166,6 +167,11 @@ export default function ChatWorkspace() {
         role: "assistant",
         content: data.response,
         createdAt: new Date().toISOString(),
+        model: data.model,
+        generationMs:
+          Number.isFinite(data.generation_ms) && data.generation_ms >= 0
+            ? data.generation_ms
+            : undefined,
       };
 
       setConversations((previous) =>
