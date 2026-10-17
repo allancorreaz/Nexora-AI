@@ -13,6 +13,7 @@ from dataclasses import asdict
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 
+from app.web_source import WebSourceError, preview_public_article
 from app.document_processor import DocumentProcessingError
 from app.document_repository import (
     DEFAULT_DB_PATH,
@@ -50,6 +51,19 @@ def _summary(document: StoredDocument) -> DocumentSummary:
     values = asdict(document)
     values.pop("text")
     return DocumentSummary(**values)
+
+
+class WebPreviewRequest(BaseModel):
+    url: str
+
+
+@router.post("/web/preview")
+async def preview_web_document(request: WebPreviewRequest):
+    """Consulta uma pagina publica permitida, sem salva-la na base."""
+    try:
+        return await preview_public_article(request.url)
+    except WebSourceError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.post("", response_model=DocumentSummary, status_code=201)
