@@ -10,7 +10,24 @@ Assistente de IA local, construído com **Next.js**, **FastAPI** e **Ollama**. O
 ![Ollama](https://img.shields.io/badge/IA-Ollama-555555)
 ![Status](https://img.shields.io/badge/status-MVP%20em%20desenvolvimento-orange)
 
+**Criado e desenvolvido por [Allan de Melo Correa](https://github.com/allancorreaz) · [GitHub @allancorreaz](https://github.com/allancorreaz)**
+
 > **Estado atual:** chat com IA local funcional e testes básicos da API. **Ainda não** há upload de documentos, RAG, autenticação nem capacidade multiusuário validada.
+
+## Por que este projeto existe?
+
+Em muitas equipes, o conhecimento operacional fica espalhado por documentos, treinamentos gravados e procedimentos internos. Localizar a orientação correta pode exigir tempo e depender de quem participou de uma reunião.
+
+O **Nexora AI** nasce como um projeto pessoal de engenharia de software para experimentar uma solução de consulta em linguagem natural, com execução local e arquitetura que permita evoluir os modelos de IA. A ideia é facilitar o acesso ao conhecimento **sem substituir as fontes originais e a validação humana**.
+
+### Onde poderá ser utilizado
+
+- **Treinamento e suporte interno:** consultar orientações e procedimentos com referência às fontes (recurso planejado).
+- **Manuais de sistemas e operações:** localizar etapas em documentos técnicos (recurso planejado).
+- **Onboarding de equipes:** reduzir o tempo de busca por informações frequentes (recurso planejado).
+- **Laboratório local de IA:** experimentar modelos gratuitos e comparar desempenho (já possível no chat atual).
+
+A base de conhecimento e as citações documentais **ainda não estão implementadas**. Nenhuma documentação corporativa faz parte deste repositório.
 
 ## Visão geral
 
@@ -24,6 +41,7 @@ O Nexora AI é um projeto de assistente de conhecimento concebido para uso local
 - Indicador de geração de resposta, bloqueio temporário de novos envios e tratamento básico de erros.
 - Limite inicial de inferências simultâneas **por processo** na API.
 - Testes automatizados básicos com `unittest` e `httpx`.
+- Renderização de respostas em **Markdown**, com metadados de modelo e tempo de geração.
 
 ## Arquitetura atual
 
@@ -66,7 +84,7 @@ sequenceDiagram
 | Componentes | shadcn/ui, Base UI, Lucide | Funcional |
 | Backend | Python 3.12, FastAPI, Uvicorn, httpx | Funcional |
 | Inferência | Ollama + Qwen3 1.7B | Funcional localmente |
-| Testes | unittest + ASGITransport | 4 testes básicos |
+| Testes | unittest + ASGITransport | 6 testes básicos validados localmente |
 | Banco de dados | PostgreSQL + pgvector | Planejado |
 | Busca documental | Embeddings + RAG | Planejado |
 | Implantação | Contêineres e infraestrutura | Planejado |
@@ -192,6 +210,16 @@ O fluxo planejado deverá priorizar **transcrições de treinamento** para regra
 - Não inclua documentos confidenciais ou dados corporativos sem autorização explícita e controles de acesso apropriados.
 - Evite expor o Ollama ou o FastAPI diretamente na internet sem autenticação, isolamento e segurança adequados.
 - A troca do **modelo de geração** é configurável no provedor Ollama; trocar de serviço de inferência pode exigir um novo adaptador. No futuro, trocar modelos de **embeddings** poderá exigir reindexar os documentos.
+
+## Autoria e atribuição
+
+**Autor e criador do projeto: Allan de Melo Correa** ([GitHub: @allancorreaz](https://github.com/allancorreaz)).
+
+O Nexora AI é um projeto pessoal e independente, criado para aprendizado, desenvolvimento de produto e portfólio profissional. A autoria refere-se ao código e à organização original do projeto; frameworks, bibliotecas e modelos de IA utilizados são tecnologias de terceiros, sujeitos às próprias licenças e condições de uso.
+
+Este repositório não concede, por si só, autorização para utilizar dados, marcas, documentos ou infraestrutura de terceiros. Uma eventual implantação corporativa deverá ocorrer com autorização e avaliação de segurança e de direitos aplicáveis.
+
+**Licenciamento:** ainda não foi definida uma licença de distribuição do código do Nexora AI. A atribuição de autoria não substitui a escolha de uma licença, que será feita separadamente.
 
 ## Desenvolvimento
 
