@@ -77,6 +77,9 @@ class TestNexoraAPI(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["response"], "Olá! Sou a Nexora AI.")
+        self.assertEqual(response.json()["model"], "qwen3:1.7b")
+        self.assertIsInstance(response.json()["generation_ms"], int)
+        self.assertGreaterEqual(response.json()["generation_ms"], 0)
         provider.generate.assert_awaited_once()
 
     async def test_chat_sem_mensagens(self):
