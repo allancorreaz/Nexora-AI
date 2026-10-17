@@ -18,6 +18,8 @@ import {
   FileText,
   FolderOpen,
   LoaderCircle,
+  Link2,
+  ExternalLink,
   RefreshCw,
   Trash2,
   Upload,
@@ -38,6 +40,7 @@ type DocumentSummary = {
   sha256: string;
   character_count: number;
   created_at: string;
+  source_url: string;
 };
 type DocumentDetail = DocumentSummary & { text: string };
 type ApiError = { detail?: string };
@@ -72,6 +75,8 @@ export default function KnowledgeBase() {
   const [filter, setFilter] = useState<Category | "todas">("todas");
   const [system, setSystem] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [webUrl, setWebUrl] = useState("");
+  const [importingUrl, setImportingUrl] = useState(false);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [openingId, setOpeningId] = useState<string | null>(null);
@@ -167,6 +172,31 @@ export default function KnowledgeBase() {
       );
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleWebImport(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!webUrl.trim() || importingUrl) return;
+    setImportingUrl(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await fetch(`${API_URL}/api/documents/web/import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: webUrl.trim() }),
+      });
+      if (!response.ok) throw new Error(await getError(response));
+      setWebUrl("");
+      setNotice("Artigo importado com a URL da fonte original.");
+      await refresh();
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "Falha ao importar o link.",
+      );
+    } finally {
+      setImportingUrl(false);
     }
   }
 
@@ -362,6 +392,52 @@ export default function KnowledgeBase() {
             </div>
           </form>
 
+          <form
+            onSubmit={handleWebImport}
+            className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 sm:p-6"
+          >
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800">
+                <Link2 size={19} aria-hidden="true" />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold">Adicionar artigo por link</h2>
+                <p className="text-xs text-zinc-400">
+                  Nesta etapa: artigos públicos individuais da ajuda Alterdata
+                </p>
+              </div>
+            </div>
+            <label className="flex flex-col gap-2 text-xs font-medium text-zinc-300">
+              URL do artigo
+              <input
+                type="url"
+                required
+                value={webUrl}
+                onChange={(event) => setWebUrl(event.target.value)}
+                placeholder="https://ajuda.alterdata.com.br/bimerbase/..."
+                className="h-11 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-100 outline-none placeholder:text-zinc-600 focus:border-zinc-500"
+              />
+            </label>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="max-w-lg text-xs text-zinc-500">
+                A página inicial da base não é um artigo. Importe uma página de
+                procedimento específica. Não são acessadas áreas com login.
+              </p>
+              <Button
+                type="submit"
+                disabled={!webUrl.trim() || importingUrl}
+                className="h-10 gap-2 bg-zinc-100 px-4 text-zinc-950 hover:bg-zinc-300"
+              >
+                {importingUrl ? (
+                  <LoaderCircle size={16} className="animate-spin" />
+                ) : (
+                  <Link2 size={16} />
+                )}
+                {importingUrl ? "Importando..." : "Adicionar link"}
+              </Button>
+            </div>
+          </form>
+
           <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/40">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 px-5 py-4">
               <div>
@@ -424,6 +500,18 @@ export default function KnowledgeBase() {
                       >
                         {document.filename}
                       </button>
+                      {document.source_url && (
+                        <a
+                          href={document.source_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-xs text-zinc-400 underline underline-offset-2 hover:text-zinc-200"
+                          title={document.source_url}
+                        >
+                          <ExternalLink size={12} aria-hidden="true" />
+                          Abrir artigo original
+                        </a>
+                      )}
                       <p className="mt-1 text-xs text-zinc-500">
                         {
                           categories.find(
@@ -482,6 +570,19 @@ export default function KnowledgeBase() {
                   <X size={17} />
                 </Button>
               </div>
+              {selected.source_url && (
+                <div className="border-b border-zinc-800 px-5 py-3 text-xs">
+                  Fonte:{" "}
+                  <a
+                    href={selected.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="break-all text-zinc-300 underline underline-offset-2"
+                  >
+                    {selected.source_url}
+                  </a>
+                </div>
+              )}
               <pre className="max-h-96 overflow-auto p-5 font-sans text-sm leading-7 whitespace-pre-wrap text-zinc-300">
                 {selected.text}
               </pre>
