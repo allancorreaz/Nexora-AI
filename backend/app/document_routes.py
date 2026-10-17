@@ -41,6 +41,7 @@ class DocumentSummary(BaseModel):
     sha256: str
     character_count: int
     created_at: str
+    source_url: str = ""
 
 
 class DocumentDetail(DocumentSummary):
@@ -64,6 +65,28 @@ async def preview_web_document(request: WebPreviewRequest):
         return await preview_public_article(request.url)
     except WebSourceError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.post("/web/import", response_model=DocumentSummary, status_code=201)
+async def import_web_document(
+    request: WebPreviewRequest,
+    repository: DocumentRepository = Depends(get_document_repository),
+):
+    """Importa um artigo publico individual, sem varrer outros enderecos."""
+    try:
+        article = await preview_public_article(request.url)
+        if article["truncated"]:
+            raise WebSourceError("O artigo excede o limite de extracao.")
+        document = repository.add_web(
+            url=str(article["url"]),
+            title=str(article["title"]),
+            text=str(article["text"]),
+        )
+    except DuplicateDocumentError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except (WebSourceError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return _summary(document)
 
 
 @router.post("", response_model=DocumentSummary, status_code=201)
