@@ -171,3 +171,13 @@
     font: inherit;
   }
 }
+
+/* Rolagem sem barra visual no historico de conversas da Sidebar. */
+.nexora-scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.nexora-scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
