@@ -1,5 +1,6 @@
 """Testes de importacao de artigos web e compatibilidade com SQLite anterior."""
 import sqlite3
+from contextlib import closing
 import tempfile
 import unittest
 from pathlib import Path
@@ -45,7 +46,7 @@ class WebPersistenceTests(unittest.TestCase):
             self.repo.add_web(url=ARTICLE["url"], title="Segunda", text="Versao atualizada")
 
     def test_migrates_existing_database_preserving_documents(self):
-        with sqlite3.connect(self.path) as connection:
+        with closing(sqlite3.connect(self.path)) as connection:
             connection.execute(
                 """CREATE TABLE documents (
                     id TEXT PRIMARY KEY, filename TEXT NOT NULL,
@@ -59,6 +60,7 @@ class WebPersistenceTests(unittest.TestCase):
                 """INSERT INTO documents VALUES
                 ('old-id','antigo.txt','transcricao','ERP','.txt','oldhash',5,'2026-01-01','texto')"""
             )
+            connection.commit()
         existing = self.repo.get("old-id")
         self.assertEqual(existing.text, "texto")
         self.assertEqual(existing.source_url, "")
