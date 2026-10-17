@@ -9,6 +9,7 @@ Nao inclui autenticacao nem indexacao vetorial: uso local e autorizado.
 
 from __future__ import annotations
 
+from contextlib import closing, contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -67,6 +68,13 @@ class DocumentRepository:
         connection.commit()
         return connection
 
+    @contextmanager
+    def _connection(self):
+        """Garante commit/rollback e fechamento da conexao, inclusive no Windows."""
+        with closing(self._connect()) as connection:
+            with connection:
+                yield connection
+
     @staticmethod
     def _document(row: sqlite3.Row) -> StoredDocument:
         return StoredDocument(**dict(row))
@@ -111,7 +119,7 @@ class DocumentRepository:
             text=extracted_text,
         )
 
-        with self._connect() as connection:
+        with self._connection() as connection:
             try:
                 connection.execute(
                     """
@@ -130,7 +138,7 @@ class DocumentRepository:
         return document
 
     def get(self, document_id: str) -> StoredDocument | None:
-        with self._connect() as connection:
+        with self._connection() as connection:
             row = connection.execute(
                 "SELECT * FROM documents WHERE id = ?", (document_id,)
             ).fetchone()
@@ -155,12 +163,12 @@ class DocumentRepository:
         query += " ORDER BY created_at DESC, id DESC LIMIT ?"
         parameters.append(limit)
 
-        with self._connect() as connection:
+        with self._connection() as connection:
             rows = connection.execute(query, parameters).fetchall()
         return [self._document(row) for row in rows]
 
     def delete(self, document_id: str) -> bool:
-        with self._connect() as connection:
+        with self._connection() as connection:
             cursor = connection.execute(
                 "DELETE FROM documents WHERE id = ?", (document_id,)
             )
