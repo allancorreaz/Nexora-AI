@@ -1,46 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import Sidebar from "@/components/layout/Sidebar";
 import Chat from "@/components/chat/Chat";
 
 import type { Conversation, Message } from "@/types/chat";
-
 import { loadConversations, saveConversations } from "@/lib/chat-storage";
 
-export default function ChatWorkspace() {
-  // Armazena todas as conversas.
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
-  // Identifica a conversa selecionada.
+type ChatApiResponse = {
+  response: string;
+  model: string;
+};
+
+export default function ChatWorkspace() {
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
   >(null);
-
-  // Controla a inicialização do histórico.
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Recupera o histórico após a montagem do componente.
+  const sendingRef = useRef(false);
+
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      const saved = loadConversations();
-
-      setConversations(saved);
+      setConversations(loadConversations());
       setIsLoaded(true);
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
   }, []);
 
-  // Salva automaticamente as alterações no histórico.
   useEffect(() => {
     if (!isLoaded) return;
-
     saveConversations(conversations);
   }, [conversations, isLoaded]);
 
-  // Cria uma nova conversa vazia.
   function createConversation() {
     const now = new Date().toISOString();
     const id = crypto.randomUUID();
@@ -55,9 +54,9 @@ export default function ChatWorkspace() {
 
     setConversations((previous) => [conversation, ...previous]);
     setActiveConversationId(id);
+    setError(null);
   }
 
-  // Exclui uma conversa mediante confirmação.
   function deleteConversation(conversationId: string) {
     const conversation = conversations.find(
       (item) => item.id === conversationId,
@@ -71,78 +70,132 @@ export default function ChatWorkspace() {
 
     if (!confirmed) return;
 
-    // Remove somente a conversa selecionada.
     setConversations((previous) =>
       previous.filter((item) => item.id !== conversationId),
     );
 
-    // Limpa a seleção se a conversa excluída estiver aberta.
     if (activeConversationId === conversationId) {
       setActiveConversationId(null);
     }
   }
 
-  // Adiciona uma mensagem à conversa atual.
-  function addMessage(content: string) {
+  async function addMessage(content: string) {
     const trimmedContent = content.trim();
 
-    if (!trimmedContent) return;
+    if (!trimmedContent || sendingRef.current) return;
+
+    sendingRef.current = true;
+    setIsSending(true);
+    setError(null);
 
     const now = new Date().toISOString();
 
-    const message: Message = {
+    const userMessage: Message = {
       id: crypto.randomUUID(),
       role: "user",
       content: trimmedContent,
       createdAt: now,
     };
 
-    // Cria automaticamente uma conversa, caso não exista uma ativa.
-    if (!activeConversationId) {
-      const conversationId = crypto.randomUUID();
+    const conversationId = activeConversationId ?? crypto.randomUUID();
 
+    const existingConversation = conversations.find(
+      (conversation) => conversation.id === conversationId,
+    );
+
+    const previousMessages = existingConversation?.messages ?? [];
+    const updatedMessages = [...previousMessages, userMessage];
+
+    if (!existingConversation) {
       const newConversation: Conversation = {
         id: conversationId,
         title: trimmedContent.slice(0, 40),
-        messages: [message],
+        messages: updatedMessages,
         createdAt: now,
         updatedAt: now,
       };
 
       setConversations((previous) => [newConversation, ...previous]);
       setActiveConversationId(conversationId);
-
-      return;
+    } else {
+      setConversations((previous) =>
+        previous.map((conversation) =>
+          conversation.id === conversationId
+            ? {
+                ...conversation,
+                title:
+                  conversation.messages.length === 0
+                    ? trimmedContent.slice(0, 40)
+                    : conversation.title,
+                messages: updatedMessages,
+                updatedAt: now,
+              }
+            : conversation,
+        ),
+      );
     }
 
-    // Adiciona a mensagem à conversa selecionada.
-    setConversations((previous) =>
-      previous.map((conversation) => {
-        if (conversation.id !== activeConversationId) {
-          return conversation;
-        }
+    try {
+      const response = await fetch(`${API_URL}/api/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: updatedMessages
+            .slice(-30)
+            .map(({ role, content: messageContent }) => ({
+              role,
+              content: messageContent,
+            })),
+        }),
+      });
 
-        const isFirstMessage = conversation.messages.length === 0;
+      if (!response.ok) {
+        throw new Error(`Erro HTTP ${response.status}`);
+      }
 
-        return {
-          ...conversation,
-          title: isFirstMessage
-            ? trimmedContent.slice(0, 40)
-            : conversation.title,
-          messages: [...conversation.messages, message],
-          updatedAt: now,
-        };
-      }),
-    );
+      const data: ChatApiResponse = await response.json();
+
+      if (typeof data.response !== "string" || !data.response.trim()) {
+        throw new Error("A IA retornou uma resposta vazia.");
+      }
+
+      const assistantMessage: Message = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: data.response,
+        createdAt: new Date().toISOString(),
+      };
+
+      setConversations((previous) =>
+        previous.map((conversation) =>
+          conversation.id === conversationId
+            ? {
+                ...conversation,
+                messages: [...conversation.messages, assistantMessage],
+                updatedAt: assistantMessage.createdAt,
+              }
+            : conversation,
+        ),
+      );
+    } catch (caughtError) {
+      console.error("Erro ao consultar a IA:", caughtError);
+
+      setError(
+        "Não foi possível obter uma resposta. Verifique se o FastAPI e o Ollama estão em execução.",
+      );
+    } finally {
+      sendingRef.current = false;
+      setIsSending(false);
+    }
   }
 
-  // Localiza a conversa ativa.
   const activeConversation =
     conversations.find(
       (conversation) => conversation.id === activeConversationId,
     ) ?? null;
 
-  // Aguarda a recuperação do histórico.
   if (!isLoaded) {
     return (
       <div className="flex h-screen items-center justify-center bg-zinc-950 text-zinc-400">
@@ -157,15 +210,30 @@ export default function ChatWorkspace() {
         conversations={conversations}
         activeConversationId={activeConversationId}
         onNewConversation={createConversation}
-        onSelectConversation={setActiveConversationId}
+        onSelectConversation={(id) => {
+          setActiveConversationId(id);
+          setError(null);
+        }}
         onDeleteConversation={deleteConversation}
       />
 
-      <Chat
-        key={activeConversationId ?? "new"}
-        messages={activeConversation?.messages ?? []}
-        onSendMessage={addMessage}
-      />
+      <div className="flex min-w-0 flex-1 flex-col">
+        {error && (
+          <div
+            role="alert"
+            className="border-b border-red-500/30 bg-red-500/10 px-5 py-3 text-sm text-red-300"
+          >
+            {error}
+          </div>
+        )}
+
+        <Chat
+          key={activeConversationId ?? "new"}
+          messages={activeConversation?.messages ?? []}
+          onSendMessage={addMessage}
+          isSending={isSending}
+        />
+      </div>
     </div>
   );
 }
