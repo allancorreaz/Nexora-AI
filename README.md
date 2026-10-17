@@ -42,6 +42,7 @@ O Nexora AI é um projeto de assistente de conhecimento concebido para uso local
 - Limite inicial de inferências simultâneas **por processo** na API.
 - Testes automatizados básicos com `unittest` e `httpx`.
 - Renderização de respostas em **Markdown**, com metadados de modelo e tempo de geração.
+- Extração de TXT, MD, PDF e DOCX e endpoint de **prévia temporária** do conteúdo, sem armazenar ou indexar documentos.
 
 ## Arquitetura atual
 
@@ -84,7 +85,7 @@ sequenceDiagram
 | Componentes | shadcn/ui, Base UI, Lucide | Funcional |
 | Backend | Python 3.12, FastAPI, Uvicorn, httpx | Funcional |
 | Inferência | Ollama + Qwen3 1.7B | Funcional localmente |
-| Testes | unittest + ASGITransport | 6 testes básicos validados localmente |
+| Testes | unittest + ASGITransport | Testes automatizados de API e documentos |
 | Banco de dados | PostgreSQL + pgvector | Planejado |
 | Busca documental | Embeddings + RAG | Planejado |
 | Implantação | Contêineres e infraestrutura | Planejado |
@@ -147,6 +148,7 @@ A URL padrão da API no frontend é `http://127.0.0.1:8000`. Para alterá-la, co
 | `GET` | `/health` | Confirma que a API está em execução; **não** valida o Ollama |
 | `GET` | `/health/ai` | Verifica comunicação com o Ollama e presença do modelo configurado; responde HTTP 503 se indisponível |
 | `POST` | `/api/chat` | Envia até 30 mensagens e recebe uma resposta completa |
+| `POST` | `/api/documents/preview` | Recebe um arquivo de até 5 MB, extrai texto e devolve uma prévia sem salvar ou indexar |
 
 Exemplo do chat:
 
@@ -157,6 +159,12 @@ Exemplo do chat:
   ]
 }
 ```
+
+### Experimentar a prévia de documentos
+
+Com a API em execução, abra [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs), escolha `POST /api/documents/preview`, clique em **Try it out**, selecione um arquivo TXT, MD, PDF ou DOCX e execute. O retorno informa o nome, número de caracteres, uma prévia de até 5.000 caracteres e `saved: false`.
+
+**Atenção:** esta etapa não oferece autenticação, banco de documentos nem pesquisa em arquivos. O upload é lido temporariamente para extrair texto, não é gravado pela aplicação nem adicionado à base de conhecimento. O limite de 5 MB é verificado na leitura; ainda não existe uma proteção completa de infraestrutura contra requisições multipart excessivas ou documentos maliciosos. Use apenas com arquivos confiáveis em ambiente local.
 
 ## Executar testes
 
