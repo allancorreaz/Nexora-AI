@@ -39,6 +39,10 @@ O runner executa todas as verificacoes do perfil, imprime um resumo e retorna **
 
 **Prerequisitos:** virtualenv configurado com `backend/requirements.txt`, Node.js e dependencias instaladas em `frontend/` com `npm install`. O perfil `full` pode consumir mais memoria e CPU devido ao build. A auditoria do npm usa a rede e pode falhar por indisponibilidade do registro ou vulnerabilidades reportadas; isso nao equivale necessariamente a uma falha de codigo.
 
+## Execucao automatica no GitHub
+
+O workflow em `.github/workflows/quality.yml` roda em push e pull request para `main` e por acionamento manual. Em dois jobs isolados, instala dependencias, testa o backend e valida o frontend (TypeScript, ESLint, Prettier sem alterar arquivos, build e auditoria de producao). Nao exige Ollama nem acesso a arquivos pessoais. Os resultados reais devem ser conferidos na aba **Actions** do repositorio.
+
 ## Plano de testes em evolucao (a implementar)
 
 A automacao deve aumentar **conforme as funcionalidades existirem**; nao consideramos testes de modulos inexistentes como aprovados.
