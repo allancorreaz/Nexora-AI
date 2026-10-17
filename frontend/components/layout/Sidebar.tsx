@@ -145,7 +145,11 @@ export default function Sidebar({
               type="button"
               onClick={() => onViewChange(item.id as WorkspaceView)}
               disabled={item.id !== "chat" && item.id !== "knowledge"}
-              title={item.id === "training" || item.id === "settings" ? `${item.label} (em breve)` : item.label}
+              title={
+                item.id === "training" || item.id === "settings"
+                  ? `${item.label} (em breve)`
+                  : item.label
+              }
               aria-current={activeView === item.id ? "page" : undefined}
               className={`flex h-11 w-full items-center rounded-xl text-sm transition-colors ${
                 collapsed ? "justify-center" : "gap-3 px-3"
