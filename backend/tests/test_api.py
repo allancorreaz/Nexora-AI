@@ -1,9 +1,8 @@
-
 import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
-from httpx import ASGITransport, AsyncClient
+from httpx import ASGITransport, AsyncClient, Request, Response
 
 from app.main import app
 
@@ -28,17 +27,42 @@ class TestNexoraAPI(unittest.IsolatedAsyncioTestCase):
             "nexora-ai-backend",
         )
 
-    async def test_chat_com_resposta_simulada(self):
-        provider = SimpleNamespace(
-            generate=AsyncMock(
-                return_value="Olá! Sou a Nexora AI."
-            )
+    async def test_health_ai_modelo_disponivel(self):
+        ollama_response = Response(
+            200,
+            json={"models": [{"name": "qwen3:1.7b"}]},
+            request=Request("GET", "http://127.0.0.1:11434/api/tags"),
         )
 
-        with patch(
-            "app.main.get_ai_provider",
-            return_value=provider,
-        ):
+        with patch("app.main.httpx.AsyncClient") as client_class:
+            client = client_class.return_value.__aenter__.return_value
+            client.get = AsyncMock(return_value=ollama_response)
+            response = await self.client.get("/health/ai")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "ready")
+        self.assertEqual(response.json()["model"], "qwen3:1.7b")
+
+    async def test_health_ai_modelo_ausente(self):
+        ollama_response = Response(
+            200,
+            json={"models": []},
+            request=Request("GET", "http://127.0.0.1:11434/api/tags"),
+        )
+
+        with patch("app.main.httpx.AsyncClient") as client_class:
+            client = client_class.return_value.__aenter__.return_value
+            client.get = AsyncMock(return_value=ollama_response)
+            response = await self.client.get("/health/ai")
+
+        self.assertEqual(response.status_code, 503)
+
+    async def test_chat_com_resposta_simulada(self):
+        provider = SimpleNamespace(
+            generate=AsyncMock(return_value="Olá! Sou a Nexora AI.")
+        )
+
+        with patch("app.main.get_ai_provider", return_value=provider):
             response = await self.client.post(
                 "/api/chat",
                 json={
@@ -52,10 +76,7 @@ class TestNexoraAPI(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.json()["response"],
-            "Olá! Sou a Nexora AI.",
-        )
+        self.assertEqual(response.json()["response"], "Olá! Sou a Nexora AI.")
         provider.generate.assert_awaited_once()
 
     async def test_chat_sem_mensagens(self):
@@ -63,7 +84,6 @@ class TestNexoraAPI(unittest.IsolatedAsyncioTestCase):
             "/api/chat",
             json={"messages": []},
         )
-
         self.assertEqual(response.status_code, 422)
 
     async def test_chat_com_role_invalida(self):
@@ -78,7 +98,6 @@ class TestNexoraAPI(unittest.IsolatedAsyncioTestCase):
                 ]
             },
         )
-
         self.assertEqual(response.status_code, 422)
 
 
