@@ -7,7 +7,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import Sidebar from "@/components/layout/Sidebar";
+import Sidebar, { type WorkspaceView } from "@/components/layout/Sidebar";
+import KnowledgeBase from "@/components/knowledge/KnowledgeBase";
 import Chat from "@/components/chat/Chat";
 
 import type { Conversation, Message } from "@/types/chat";
@@ -23,6 +24,7 @@ type ChatApiResponse = {
 
 export default function ChatWorkspace() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeView, setActiveView] = useState<WorkspaceView>("chat");
   const [activeConversationId, setActiveConversationId] = useState<
     string | null
   >(null);
@@ -218,6 +220,8 @@ export default function ChatWorkspace() {
   return (
     <div className="flex h-screen overflow-hidden bg-zinc-950 text-white">
       <Sidebar
+        activeView={activeView}
+        onViewChange={setActiveView}
         conversations={conversations}
         activeConversationId={activeConversationId}
         onNewConversation={createConversation}
@@ -238,12 +242,16 @@ export default function ChatWorkspace() {
           </div>
         )}
 
-        <Chat
-          key={activeConversationId ?? "new"}
-          messages={activeConversation?.messages ?? []}
-          onSendMessage={addMessage}
-          isSending={isSending}
-        />
+        {activeView === "knowledge" ? (
+          <KnowledgeBase />
+        ) : (
+          <Chat
+            key={activeConversationId ?? "new"}
+            messages={activeConversation?.messages ?? []}
+            onSendMessage={addMessage}
+            isSending={isSending}
+          />
+        )}
       </div>
     </div>
   );
