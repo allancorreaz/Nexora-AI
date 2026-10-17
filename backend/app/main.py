@@ -25,8 +25,6 @@ app = FastAPI(
     version="0.1.0",
 )
 
-app.include_router(document_router)
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
@@ -83,6 +81,10 @@ async def preview_document(file: UploadFile = File(...)):
         preview=text[:DOCUMENT_PREVIEW_CHARACTERS],
         truncated=len(text) > DOCUMENT_PREVIEW_CHARACTERS,
     )
+
+
+# A rota estatica /api/documents/preview deve preceder /{document_id}.
+app.include_router(document_router)
 
 
 class ChatRequest(BaseModel):
