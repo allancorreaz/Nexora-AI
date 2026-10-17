@@ -12,7 +12,7 @@ Assistente de IA local, construído com **Next.js**, **FastAPI** e **Ollama**. O
 
 **Criado e desenvolvido por [Allan de Melo Correa](https://github.com/allancorreaz) · [GitHub @allancorreaz](https://github.com/allancorreaz)**
 
-> **Estado atual:** chat com IA local funcional, leitura e persistência local de documentos via API, com testes automatizados. **Ainda não** há interface de documentos, RAG, autenticação nem capacidade multiusuário validada.
+> **Estado atual:** chat com IA local funcional, API de documentos e interface de Base de Conhecimento implementadas. **Ainda não** há RAG, autenticação nem capacidade multiusuário validada.
 
 ## Por que este projeto existe?
 
@@ -43,7 +43,7 @@ O Nexora AI é um projeto de assistente de conhecimento concebido para uso local
 - Testes automatizados básicos com `unittest` e `httpx`.
 - Renderização de respostas em **Markdown**, com metadados de modelo e tempo de geração.
 - Extração de TXT, MD, PDF e DOCX e endpoint de **prévia temporária** do conteúdo, sem armazenar ou indexar documentos.
-- **Repositório local SQLite** para texto extraído e metadados, com deduplicação por SHA-256, categorias de fontes, listagem, consulta e exclusão, integrado à API FastAPI (interface visual ainda pendente).
+- **Repositório local SQLite** para texto extraído e metadados, com deduplicação por SHA-256, categorias de fontes, listagem, consulta e exclusão, integrado à API e à seção **Base de conhecimento** no frontend.
 
 ## Arquitetura atual
 
@@ -171,6 +171,12 @@ Exemplo do chat:
 Com a API em execução, abra [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs), escolha `POST /api/documents/preview`, clique em **Try it out**, selecione um arquivo TXT, MD, PDF ou DOCX e execute. O retorno informa o nome, número de caracteres, uma prévia de até 5.000 caracteres e `saved: false`.
 
 **Atenção:** esta etapa não oferece autenticação, banco de documentos nem pesquisa em arquivos. O upload é lido temporariamente para extrair texto, não é gravado pela aplicação nem adicionado à base de conhecimento. O limite de 5 MB é verificado na leitura; ainda não existe uma proteção completa de infraestrutura contra requisições multipart excessivas ou documentos maliciosos. Use apenas com arquivos confiáveis em ambiente local.
+
+### Base de Conhecimento no frontend
+
+Abra o Nexora AI em `http://localhost:3000` com a API em execução em `127.0.0.1:8000`. No menu lateral, entre em **Base de conhecimento**. Escolha a categoria (`Transcrição`, `Documentação` ou `Outro`), informe opcionalmente o sistema/assunto e selecione um arquivo TXT, MD, PDF ou DOCX de até 5 MB. Clique em **Importar**.
+
+A tela permite listar documentos, filtrar por categoria, abrir o texto extraído e excluir um registro com confirmação. Documentos idênticos são recusados; a exclusão remove o texto armazenado do SQLite. O chat **ainda não consulta essa base automaticamente**. A interface depende do FastAPI local e não inclui autenticação. Utilize documentos de teste e não exponha a API à internet.
 
 ### Repositório SQLite de documentos
 
