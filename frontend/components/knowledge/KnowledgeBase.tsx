@@ -29,6 +29,8 @@ import {
 import { Button } from "@/components/ui/button";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+const BIMER_HELP_URL = "https://ajuda.alterdata.com.br/bimerbase";
+const BIMER_TEST_ARTICLE_URL = "https://ajuda.alterdata.com.br/bimerbase/bimer-instalacao/como-instalar-o-bimer-em-uma-nova-estacao";
 
 type Category = "transcricao" | "documentacao" | "outro";
 type DocumentSummary = {
@@ -406,6 +408,25 @@ export default function KnowledgeBase() {
                   Nesta etapa: artigos públicos individuais da ajuda Alterdata
                 </p>
               </div>
+            </div>
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 px-4 py-3 text-xs text-zinc-400">
+              <span>Fonte disponível: Bimer — Base de Conhecimento</span>
+              <a
+                href={BIMER_HELP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-zinc-200 underline underline-offset-2 hover:text-white"
+              >
+                Abrir central de ajuda
+                <ExternalLink size={13} aria-hidden="true" />
+              </a>
+              <button
+                type="button"
+                onClick={() => setWebUrl(BIMER_TEST_ARTICLE_URL)}
+                className="text-zinc-200 underline underline-offset-2 hover:text-white"
+              >
+                Usar artigo já testado
+              </button>
             </div>
             <label className="flex flex-col gap-2 text-xs font-medium text-zinc-300">
               URL do artigo
