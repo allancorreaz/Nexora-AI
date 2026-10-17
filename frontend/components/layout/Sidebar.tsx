@@ -17,7 +17,11 @@ import {
 import type { Conversation } from "@/types/chat";
 import { Button } from "@/components/ui/button";
 
+export type WorkspaceView = "chat" | "knowledge";
+
 type SidebarProps = {
+  activeView: WorkspaceView;
+  onViewChange: (view: WorkspaceView) => void;
   conversations: Conversation[];
   activeConversationId: string | null;
   onNewConversation: () => void;
@@ -49,13 +53,14 @@ const navigation = [
 ];
 
 export default function Sidebar({
+  activeView,
+  onViewChange,
   conversations,
   activeConversationId,
   onNewConversation,
   onSelectConversation,
   onDeleteConversation,
 }: SidebarProps) {
-  const [activeItem, setActiveItem] = useState("chat");
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -116,7 +121,7 @@ export default function Sidebar({
         <Button
           type="button"
           onClick={() => {
-            setActiveItem("chat");
+            onViewChange("chat");
             onNewConversation();
           }}
           className={`h-11 bg-indigo-600 text-white hover:bg-indigo-500 ${
@@ -138,14 +143,18 @@ export default function Sidebar({
             <button
               key={item.id}
               type="button"
-              onClick={() => setActiveItem(item.id)}
-              title={item.label}
+              onClick={() => onViewChange(item.id as WorkspaceView)}
+              disabled={item.id !== "chat" && item.id !== "knowledge"}
+              title={item.id === "training" || item.id === "settings" ? `${item.label} (em breve)` : item.label}
+              aria-current={activeView === item.id ? "page" : undefined}
               className={`flex h-11 w-full items-center rounded-xl text-sm transition-colors ${
                 collapsed ? "justify-center" : "gap-3 px-3"
               } ${
-                activeItem === item.id
+                activeView === item.id
                   ? "bg-zinc-800 font-medium text-white"
-                  : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                  : item.id === "training" || item.id === "settings"
+                    ? "cursor-not-allowed text-zinc-600"
+                    : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
               }`}
             >
               <Icon size={18} />
@@ -186,7 +195,7 @@ export default function Sidebar({
                   <button
                     type="button"
                     onClick={() => {
-                      setActiveItem("chat");
+                      onViewChange("chat");
                       onSelectConversation(conversation.id);
                     }}
                     className="flex min-w-0 flex-1 items-center gap-3 px-3 py-3 text-left text-sm text-zinc-300"
