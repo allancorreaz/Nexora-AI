@@ -4,3 +4,9 @@ backend/.venv/
 **/__pycache__/
 *.py[cod]
 backend/.env
+backend/data/
+backend/uploads/
+backend/chroma_db/
+backend/*.db
+backend/*.sqlite3
+frontend/.env.local
