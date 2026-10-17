@@ -192,7 +192,7 @@ O comando central `tests/run_tests.py` reúne as verificações do backend e fro
 .\backend\.venv\Scripts\python.exe tests\run_tests.py --profile full
 ```
 
-O perfil `quick` verifica testes Python, TypeScript e ESLint. O `full` inclui Prettier, compilação de produção do Next.js e auditoria das dependências de produção. Consulte [tests/README.md](tests/README.md) para os perfis completos e o plano de testes futuros. O resultado do perfil `full` precisa ser validado na máquina de desenvolvimento; ele não substitui testes de carga e segurança que ainda serão implementados.
+O perfil `quick` **formata automaticamente** o frontend e depois verifica testes Python, TypeScript e ESLint. O `full` **não modifica arquivos**: verifica também a formatação, executa o build do Next.js e audita as dependências de produção. Confira `git diff` antes de registrar alterações. Consulte [tests/README.md](tests/README.md) para os perfis completos e o plano de testes futuros. O resultado do perfil `full` precisa ser validado na máquina de desenvolvimento; ele não substitui testes de carga e segurança que ainda serão implementados.
 
 ## Próximas entregas
 
