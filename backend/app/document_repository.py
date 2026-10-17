@@ -39,6 +39,7 @@ class StoredDocument:
     character_count: int
     created_at: str
     text: str
+    source_url: str = ""
 
 
 class DocumentRepository:
@@ -61,10 +62,15 @@ class DocumentRepository:
                 sha256 TEXT NOT NULL UNIQUE,
                 character_count INTEGER NOT NULL,
                 created_at TEXT NOT NULL,
-                text TEXT NOT NULL
+                text TEXT NOT NULL,
+                source_url TEXT NOT NULL DEFAULT ''
             )
             """
         )
+        # Migracao aditiva: preserva registros existentes do usuario.
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(documents)")}
+        if "source_url" not in columns:
+            connection.execute("ALTER TABLE documents ADD COLUMN source_url TEXT NOT NULL DEFAULT ''")
         connection.commit()
         return connection
 
@@ -125,9 +131,9 @@ class DocumentRepository:
                     """
                     INSERT INTO documents
                     (id, filename, category, system, extension, sha256,
-                     character_count, created_at, text)
+                     character_count, created_at, text, source_url)
                     VALUES (:id, :filename, :category, :system, :extension, :sha256,
-                            :character_count, :created_at, :text)
+                            :character_count, :created_at, :text, :source_url)
                     """,
                     vars(document),
                 )
@@ -136,6 +142,45 @@ class DocumentRepository:
                     "Este arquivo ja foi importado para a base local."
                 ) from exc
         return document
+
+    def add_web(
+        self, *, url: str, title: str, text: str, system: str = "Bimer Alterdata"
+    ) -> StoredDocument:
+        """Armazena um artigo autorizado, com URL e deduplicacao por origem."""
+        if not url or len(url) > 2048:
+            raise ValueError("URL de origem invalida.")
+        if not text.strip() or len(text) > 150_000:
+            raise ValueError("Texto do artigo vazio ou grande demais.")
+        if not isinstance(system, str) or len(system) > 120:
+            raise ValueError("Sistema deve conter ate 120 caracteres.")
+        safe_title = " ".join(title.split())[:255] or "Artigo sem titulo"
+        doc = StoredDocument(
+            id=str(uuid4()),
+            filename=safe_title,
+            category="documentacao",
+            system=system.strip(),
+            extension=".html",
+            sha256=sha256(("web:" + url).encode("utf-8")).hexdigest(),
+            character_count=len(text),
+            created_at=datetime.now(timezone.utc).isoformat(),
+            text=text,
+            source_url=url,
+        )
+        with self._connection() as connection:
+            try:
+                connection.execute(
+                    """
+                    INSERT INTO documents
+                    (id, filename, category, system, extension, sha256,
+                     character_count, created_at, text, source_url)
+                    VALUES (:id, :filename, :category, :system, :extension, :sha256,
+                            :character_count, :created_at, :text, :source_url)
+                    """,
+                    vars(doc),
+                )
+            except sqlite3.IntegrityError as exc:
+                raise DuplicateDocumentError("Este link ja foi importado.") from exc
+        return doc
 
     def get(self, document_id: str) -> StoredDocument | None:
         with self._connection() as connection:
