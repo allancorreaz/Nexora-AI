@@ -43,6 +43,7 @@ O Nexora AI é um projeto de assistente de conhecimento concebido para uso local
 - Testes automatizados básicos com `unittest` e `httpx`.
 - Renderização de respostas em **Markdown**, com metadados de modelo e tempo de geração.
 - Extração de TXT, MD, PDF e DOCX e endpoint de **prévia temporária** do conteúdo, sem armazenar ou indexar documentos.
+- **Repositório local SQLite** para texto extraído e metadados, com deduplicação por SHA-256, categorias de fontes, listagem, consulta e exclusão (camada Python, ainda **não integrada** ao endpoint nem ao frontend).
 
 ## Arquitetura atual
 
@@ -86,7 +87,8 @@ sequenceDiagram
 | Backend | Python 3.12, FastAPI, Uvicorn, httpx | Funcional |
 | Inferência | Ollama + Qwen3 1.7B | Funcional localmente |
 | Testes | unittest + ASGITransport | Testes automatizados de API e documentos |
-| Banco de dados | PostgreSQL + pgvector | Planejado |
+| Banco de dados local | SQLite (biblioteca padrão do Python) | Repositório implementado; integração à API pendente |
+| Busca vetorial futura | A definir | Planejado |
 | Busca documental | Embeddings + RAG | Planejado |
 | Implantação | Contêineres e infraestrutura | Planejado |
 
@@ -165,6 +167,12 @@ Exemplo do chat:
 Com a API em execução, abra [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs), escolha `POST /api/documents/preview`, clique em **Try it out**, selecione um arquivo TXT, MD, PDF ou DOCX e execute. O retorno informa o nome, número de caracteres, uma prévia de até 5.000 caracteres e `saved: false`.
 
 **Atenção:** esta etapa não oferece autenticação, banco de documentos nem pesquisa em arquivos. O upload é lido temporariamente para extrair texto, não é gravado pela aplicação nem adicionado à base de conhecimento. O limite de 5 MB é verificado na leitura; ainda não existe uma proteção completa de infraestrutura contra requisições multipart excessivas ou documentos maliciosos. Use apenas com arquivos confiáveis em ambiente local.
+
+### Repositório SQLite de documentos
+
+O módulo `backend/app/document_repository.py` cria, sob demanda, o arquivo `backend/data/knowledge.sqlite3`, **ignorado pelo Git**. Ele mantém ID, nome, categoria (`transcricao`, `documentacao` ou `outro`), sistema de origem, tipo, hash SHA-256, quantidade de caracteres, data de importação e texto extraído. Arquivos binários originais não são armazenados. Arquivos binários idênticos são rejeitados como duplicados.
+
+**Situação:** o repositório já pode ser utilizado por código Python e possui testes com SQLite temporário, mas `POST /api/documents/preview` continua sendo **apenas uma prévia**, sem persistência. Upload com armazenamento, controles de acesso e busca documental serão implementados em etapas posteriores. O SQLite local não inclui criptografia em repouso ou acesso multiusuário por si só; não importe informações confidenciais sem controles e autorização.
 
 ## Executar testes
 
