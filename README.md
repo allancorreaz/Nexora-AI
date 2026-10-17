@@ -127,6 +127,7 @@ A URL padrão da API no frontend é `http://127.0.0.1:8000`. Para alterá-la, co
 | Método | Rota | Finalidade |
 | --- | --- | --- |
 | `GET` | `/health` | Confirma que a API está em execução; **não** valida o Ollama |
+| `GET` | `/health/ai` | Verifica comunicação com o Ollama e presença do modelo configurado; responde HTTP 503 se indisponível |
 | `POST` | `/api/chat` | Envia até 30 mensagens e recebe uma resposta completa |
 
 Exemplo do chat:
