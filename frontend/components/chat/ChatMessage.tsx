@@ -1,11 +1,18 @@
-import { BrainCircuit, UserRound } from "lucide-react";
+import { BrainCircuit, Clock3, Cpu, UserRound } from "lucide-react";
 
 type ChatMessageProps = {
   role: "user" | "assistant";
   content: string;
+  model?: string;
+  generationMs?: number;
 };
 
-export default function ChatMessage({ role, content }: ChatMessageProps) {
+export default function ChatMessage({
+  role,
+  content,
+  model,
+  generationMs,
+}: ChatMessageProps) {
   const isUser = role === "user";
 
   return (
@@ -48,6 +55,24 @@ export default function ChatMessage({ role, content }: ChatMessageProps) {
         >
           {content}
         </div>
+        {!isUser && (model || generationMs !== undefined) && (
+          <div className="flex flex-wrap items-center gap-3 px-1 text-xs text-zinc-500">
+            {model && (
+              <span className="flex items-center gap-1">
+                <Cpu size={13} aria-hidden="true" />
+                {model}
+              </span>
+            )}
+            {generationMs !== undefined && (
+              <span className="flex items-center gap-1">
+                <Clock3 size={13} aria-hidden="true" />
+                {(generationMs / 1000).toLocaleString("pt-BR", {
+                  minimumFractionDigits: 1,
+                  maximumFractionDigits: 2,
+                })} s
+              </span>
+            )}
+          </div>
       </div>
     </article>
   );
