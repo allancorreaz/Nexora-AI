@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from app.document_processor import DocumentProcessingError, extract_text
+from app.document_routes import router as document_router
 
 from app.ai_provider import (
     ChatMessage,
@@ -23,6 +24,8 @@ app = FastAPI(
     description="Backend da plataforma Nexora AI",
     version="0.1.0",
 )
+
+app.include_router(document_router)
 
 app.add_middleware(
     CORSMiddleware,
