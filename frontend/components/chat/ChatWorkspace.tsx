@@ -5,7 +5,6 @@
  * Origem: https://github.com/allancorreaz/Nexora-AI
  */
 
-
 import { useEffect, useRef, useState } from "react";
 
 import Sidebar from "@/components/layout/Sidebar";
