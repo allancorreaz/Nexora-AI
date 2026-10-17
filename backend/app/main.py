@@ -1,5 +1,6 @@
 
 import asyncio
+from time import perf_counter
 
 import httpx
 from fastapi import FastAPI, HTTPException
@@ -39,6 +40,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
     model: str
+    generation_ms: int
 
 
 @app.get("/health")
@@ -109,11 +111,14 @@ async def chat(request: ChatRequest):
         acquired = True
 
         provider = get_ai_provider()
+        started_at = perf_counter()
         response = await provider.generate(request.messages)
+        generation_ms = round((perf_counter() - started_at) * 1000)
 
         return ChatResponse(
             response=response,
             model=settings.ai_model,
+            generation_ms=generation_ms,
         )
 
     except asyncio.TimeoutError:
