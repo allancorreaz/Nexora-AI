@@ -73,6 +73,7 @@ export default function ChatMessage({
               </span>
             )}
           </div>
+        )}
       </div>
     </article>
   );
