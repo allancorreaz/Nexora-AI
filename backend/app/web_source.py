@@ -5,7 +5,6 @@ Somente dominios e caminhos explicitamente permitidos.
 Nao tenta acessar sessoes autenticadas nem contornar controles de acesso.
 """
 from html.parser import HTMLParser
-from ipaddress import ip_address
 from urllib.parse import urlsplit
 
 import httpx
@@ -79,12 +78,16 @@ class _ArticleTextParser(HTMLParser):
 def validate_public_url(url: str) -> str:
     if not isinstance(url, str) or len(url) > 2048:
         raise WebSourceError("URL invalida.")
-    parts = urlsplit(url)
+    try:
+        parts = urlsplit(url)
+        port = parts.port
+    except ValueError as exc:
+        raise WebSourceError("URL invalida.") from exc
     host = (parts.hostname or "").lower()
     if (
         parts.scheme != "https"
         or host not in ALLOWED_HOSTS
-        or parts.port not in (None, 443)
+        or port not in (None, 443)
         or parts.username is not None
         or parts.password is not None
         or not any(parts.path.startswith(prefix) for prefix in ALLOWED_PATH_PREFIXES)
