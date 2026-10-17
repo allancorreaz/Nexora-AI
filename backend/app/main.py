@@ -50,6 +50,53 @@ async def health():
     }
 
 
+@app.get("/health/ai")
+async def health_ai():
+    """Verifica se o serviço Ollama responde e se o modelo está instalado."""
+    if settings.ai_provider != "ollama":
+        raise HTTPException(
+            status_code=503,
+            detail="Verificação de disponibilidade não configurada para este provedor.",
+        )
+
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            response = await client.get(
+                f"{settings.ai_base_url.rstrip('/')}/api/tags"
+            )
+            response.raise_for_status()
+            data = response.json()
+    except (httpx.HTTPError, ValueError):
+        raise HTTPException(
+            status_code=503,
+            detail="Serviço de IA indisponível.",
+        )
+
+    if not isinstance(data, dict) or not isinstance(data.get("models"), list):
+        raise HTTPException(
+            status_code=503,
+            detail="Resposta de disponibilidade da IA inválida.",
+        )
+
+    installed_models = {
+        model.get("name")
+        for model in data["models"]
+        if isinstance(model, dict)
+    }
+
+    if settings.ai_model not in installed_models:
+        raise HTTPException(
+            status_code=503,
+            detail="Modelo configurado não está instalado no Ollama.",
+        )
+
+    return {
+        "status": "ready",
+        "provider": settings.ai_provider,
+        "model": settings.ai_model,
+    }
+
+
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     acquired = False
