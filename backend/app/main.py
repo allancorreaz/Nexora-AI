@@ -5,9 +5,11 @@ import asyncio
 from time import perf_counter
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+
+from app.document_processor import DocumentProcessingError, extract_text
 
 from app.ai_provider import (
     ChatMessage,
@@ -30,9 +32,54 @@ app.add_middleware(
     allow_headers=["Content-Type"],
 )
 
+MAX_DOCUMENT_BYTES = 5 * 1024 * 1024
+DOCUMENT_PREVIEW_CHARACTERS = 5000
+
 inference_limit = asyncio.Semaphore(
     max(1, settings.ai_max_concurrent_requests)
 )
+
+
+class DocumentPreviewResponse(BaseModel):
+    filename: str
+    characters: int
+    preview: str
+    truncated: bool
+    saved: bool = False
+
+
+@app.post("/api/documents/preview", response_model=DocumentPreviewResponse)
+async def preview_document(file: UploadFile = File(...)):
+    """Extrai uma previa de texto sem guardar o arquivo ou indexa-lo."""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Informe o nome do arquivo.")
+
+    # O tamanho e limitado durante a leitura para evitar carregar
+    # uploads arbitrariamente grandes na memoria da aplicacao.
+    try:
+        content = await file.read(MAX_DOCUMENT_BYTES + 1)
+    finally:
+        await file.close()
+
+    if len(content) > MAX_DOCUMENT_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail="Arquivo excede o limite de 5 MB.",
+        )
+
+    try:
+        text = extract_text(file.filename, content)
+    except DocumentProcessingError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    # Nome fornecido pelo cliente nao deve conter caminhos locais.
+    safe_filename = file.filename.replace("\\", "/").rsplit("/", 1)[-1]
+    return DocumentPreviewResponse(
+        filename=safe_filename,
+        characters=len(text),
+        preview=text[:DOCUMENT_PREVIEW_CHARACTERS],
+        truncated=len(text) > DOCUMENT_PREVIEW_CHARACTERS,
+    )
 
 
 class ChatRequest(BaseModel):
