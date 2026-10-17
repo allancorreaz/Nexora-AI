@@ -194,6 +194,10 @@ O comando central `tests/run_tests.py` reúne as verificações do backend e fro
 
 O perfil `quick` **formata automaticamente** o frontend e depois verifica testes Python, TypeScript e ESLint. O `full` **não modifica arquivos**: verifica também a formatação, executa o build do Next.js e audita as dependências de produção. Confira `git diff` antes de registrar alterações. Consulte [tests/README.md](tests/README.md) para os perfis completos e o plano de testes futuros. O resultado do perfil `full` precisa ser validado na máquina de desenvolvimento; ele não substitui testes de carga e segurança que ainda serão implementados.
 
+### CI — validação automática no GitHub
+
+O workflow [Nexora AI - Qualidade](.github/workflows/quality.yml) é acionado em pushes e pull requests para `main`, ou manualmente pelo GitHub Actions. Ele executa os testes Python e, separadamente, TypeScript, ESLint, Prettier (somente verificação), build e auditoria de dependências de produção. **Não utiliza Ollama** e não executa testes que precisem de modelos locais. Consulte a aba **Actions** para verificar se cada execução foi concluída com sucesso.
+
 ## Próximas entregas
 
 ```mermaid
