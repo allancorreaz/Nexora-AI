@@ -1,6 +1,7 @@
 """Testes isolados do repositorio SQLite usando diretorio temporario."""
 
 import sqlite3
+from contextlib import closing
 import tempfile
 import unittest
 from pathlib import Path
@@ -83,7 +84,7 @@ class DocumentRepositoryTests(unittest.TestCase):
 
     def test_schema_contains_no_raw_file_column(self):
         self.repository.add("doc.txt", b"texto", category="outro")
-        with sqlite3.connect(self.path) as connection:
+        with closing(sqlite3.connect(self.path)) as connection:
             columns = [row[1] for row in connection.execute("PRAGMA table_info(documents)")]
         self.assertIn("text", columns)
         self.assertNotIn("raw_file", columns)
