@@ -1,5 +1,11 @@
 "use client";
 
+/*
+ * Nexora AI — projeto criado por Allan de Melo Correa.
+ * Origem: https://github.com/allancorreaz/Nexora-AI
+ */
+
+
 import { useEffect, useRef, useState } from "react";
 
 import Sidebar from "@/components/layout/Sidebar";
