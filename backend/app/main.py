@@ -1,3 +1,5 @@
+# Nexora AI — projeto criado por Allan de Melo Correa.
+# Origem: https://github.com/allancorreaz/Nexora-AI
 
 import asyncio
 from time import perf_counter
