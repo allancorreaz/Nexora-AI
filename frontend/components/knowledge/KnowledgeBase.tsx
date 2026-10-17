@@ -88,8 +88,36 @@ export default function KnowledgeBase() {
   }, []);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    // O carregamento inicial atualiza estado apenas apos a operacao assincrona.
+    // AbortController impede atualizar o componente apos desmontagem.
+    const controller = new AbortController();
+
+    void fetch(`${API_URL}/api/documents?limit=500`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(await getError(response));
+        return (await response.json()) as DocumentSummary[];
+      })
+      .then((data) => {
+        if (!controller.signal.aborted) setDocuments(data);
+      })
+      .catch((caught: unknown) => {
+        if (!controller.signal.aborted) {
+          setError(
+            caught instanceof Error
+              ? caught.message
+              : "Não foi possível carregar os documentos.",
+          );
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+
+    return () => controller.abort();
+  }, []);
 
   async function handleUpload(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
