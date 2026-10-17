@@ -33,7 +33,9 @@ No Linux/macOS substitua o executavel Python por `./backend/.venv/bin/python`.
 | `quick` | **Formata automaticamente** o frontend com Prettier, depois executa testes backend, TypeScript e ESLint |
 | `full` | Todos os testes backend, TypeScript, ESLint, Prettier, build Next.js e auditoria de producao |
 
-O perfil `quick` **modifica os arquivos de codigo quando o Prettier encontra diferencas**. Confira `git diff` e `git status` antes de realizar commits. O perfil `full` **nao aplica formatacao**, apenas verifica se o codigo ja esta formatado, sendo o perfil indicado para CI.\n\nO runner executa todas as verificacoes do perfil, imprime um resumo e retorna **codigo de saida diferente de zero** se qualquer verificacao falhar. Isso permite integrar o mesmo comando a CI/CD futuramente.
+O perfil `quick` **modifica os arquivos de codigo quando o Prettier encontra diferencas**. Confira `git diff` e `git status` antes de realizar commits. O perfil `full` **nao aplica formatacao**, apenas verifica se o codigo ja esta formatado, sendo o perfil indicado para CI.
+
+O runner executa todas as verificacoes do perfil, imprime um resumo e retorna **codigo de saida diferente de zero** se qualquer verificacao falhar. Isso permite integrar o mesmo comando a CI/CD futuramente.
 
 **Prerequisitos:** virtualenv configurado com `backend/requirements.txt`, Node.js e dependencias instaladas em `frontend/` com `npm install`. O perfil `full` pode consumir mais memoria e CPU devido ao build. A auditoria do npm usa a rede e pode falhar por indisponibilidade do registro ou vulnerabilidades reportadas; isso nao equivale necessariamente a uma falha de codigo.
 
