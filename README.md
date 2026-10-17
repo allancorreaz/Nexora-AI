@@ -12,7 +12,7 @@ Assistente de IA local, construído com **Next.js**, **FastAPI** e **Ollama**. O
 
 **Criado e desenvolvido por [Allan de Melo Correa](https://github.com/allancorreaz) · [GitHub @allancorreaz](https://github.com/allancorreaz)**
 
-> **Estado atual:** chat com IA local funcional e testes básicos da API. **Ainda não** há upload de documentos, RAG, autenticação nem capacidade multiusuário validada.
+> **Estado atual:** chat com IA local funcional, leitura e persistência local de documentos via API, com testes automatizados. **Ainda não** há interface de documentos, RAG, autenticação nem capacidade multiusuário validada.
 
 ## Por que este projeto existe?
 
@@ -43,7 +43,7 @@ O Nexora AI é um projeto de assistente de conhecimento concebido para uso local
 - Testes automatizados básicos com `unittest` e `httpx`.
 - Renderização de respostas em **Markdown**, com metadados de modelo e tempo de geração.
 - Extração de TXT, MD, PDF e DOCX e endpoint de **prévia temporária** do conteúdo, sem armazenar ou indexar documentos.
-- **Repositório local SQLite** para texto extraído e metadados, com deduplicação por SHA-256, categorias de fontes, listagem, consulta e exclusão (camada Python, ainda **não integrada** ao endpoint nem ao frontend).
+- **Repositório local SQLite** para texto extraído e metadados, com deduplicação por SHA-256, categorias de fontes, listagem, consulta e exclusão, integrado à API FastAPI (interface visual ainda pendente).
 
 ## Arquitetura atual
 
@@ -151,6 +151,10 @@ A URL padrão da API no frontend é `http://127.0.0.1:8000`. Para alterá-la, co
 | `GET` | `/health/ai` | Verifica comunicação com o Ollama e presença do modelo configurado; responde HTTP 503 se indisponível |
 | `POST` | `/api/chat` | Envia até 30 mensagens e recebe uma resposta completa |
 | `POST` | `/api/documents/preview` | Recebe um arquivo de até 5 MB, extrai texto e devolve uma prévia sem salvar ou indexar |
+| `POST` | `/api/documents` | Importa documento com `file`, `category` e `system` (multipart), persiste texto e metadados no SQLite |
+| `GET` | `/api/documents` | Lista documentos sem expor o texto completo; aceita `category` e `limit` |
+| `GET` | `/api/documents/{document_id}` | Consulta metadados e texto de um documento |
+| `DELETE` | `/api/documents/{document_id}` | Exclui um documento importado |
 
 Exemplo do chat:
 
@@ -172,7 +176,7 @@ Com a API em execução, abra [http://127.0.0.1:8000/docs](http://127.0.0.1:8000
 
 O módulo `backend/app/document_repository.py` cria, sob demanda, o arquivo `backend/data/knowledge.sqlite3`, **ignorado pelo Git**. Ele mantém ID, nome, categoria (`transcricao`, `documentacao` ou `outro`), sistema de origem, tipo, hash SHA-256, quantidade de caracteres, data de importação e texto extraído. Arquivos binários originais não são armazenados. Arquivos binários idênticos são rejeitados como duplicados.
 
-**Situação:** o repositório já pode ser utilizado por código Python e possui testes com SQLite temporário, mas `POST /api/documents/preview` continua sendo **apenas uma prévia**, sem persistência. Upload com armazenamento, controles de acesso e busca documental serão implementados em etapas posteriores. O SQLite local não inclui criptografia em repouso ou acesso multiusuário por si só; não importe informações confidenciais sem controles e autorização.
+**Situação:** o repositório SQLite está conectado à API de importação, consulta, listagem e exclusão. `POST /api/documents/preview` continua sendo **apenas uma prévia**, sem persistência. Para importar, use a documentação interativa em `/docs`, selecione `POST /api/documents`, informe `category` (`transcricao`, `documentacao` ou `outro`), `system` e um arquivo. O arquivo original não é guardado, apenas seu texto extraído. **O SQLite local não oferece criptografia em repouso nem autenticação**, e essas rotas ainda não contam com controle de acesso; mantenha a API restrita a `127.0.0.1` e não importe informações confidenciais sem controles e autorização. A indexação RAG continua planejada.
 
 ## Executar testes
 
