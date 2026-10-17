@@ -44,6 +44,7 @@ O Nexora AI é um projeto de assistente de conhecimento concebido para uso local
 - Renderização de respostas em **Markdown**, com metadados de modelo e tempo de geração.
 - Extração de TXT, MD, PDF e DOCX e endpoint de **prévia temporária** do conteúdo, sem armazenar ou indexar documentos.
 - **Repositório local SQLite** para texto extraído e metadados, com deduplicação por SHA-256, categorias de fontes, listagem, consulta e exclusão, integrado à API e à seção **Base de conhecimento** no frontend.
+- Importação experimental de **artigos individuais por URL da ajuda Alterdata**, preservando o link de origem e oferecendo abertura da fonte original na biblioteca.
 
 ## Arquitetura atual
 
@@ -152,6 +153,7 @@ A URL padrão da API no frontend é `http://127.0.0.1:8000`. Para alterá-la, co
 | `POST` | `/api/chat` | Envia até 30 mensagens e recebe uma resposta completa |
 | `POST` | `/api/documents/preview` | Recebe um arquivo de até 5 MB, extrai texto e devolve uma prévia sem salvar ou indexar |
 | `POST` | `/api/documents/web/preview` | Testa extração de texto de um artigo público de ajuda Alterdata, sem persistência |
+| `POST` | `/api/documents/web/import` | Importa um artigo individual permitido para SQLite, preservando URL original e recusando duplicidade |
 | `POST` | `/api/documents` | Importa documento com `file`, `category` e `system` (multipart), persiste texto e metadados no SQLite |
 | `GET` | `/api/documents` | Lista documentos sem expor o texto completo; aceita `category` e `limit` |
 | `GET` | `/api/documents/{document_id}` | Consulta metadados e texto de um documento |
@@ -184,6 +186,12 @@ A tela permite listar documentos, filtrar por categoria, abrir o texto extraído
 O módulo `backend/app/document_repository.py` cria, sob demanda, o arquivo `backend/data/knowledge.sqlite3`, **ignorado pelo Git**. Ele mantém ID, nome, categoria (`transcricao`, `documentacao` ou `outro`), sistema de origem, tipo, hash SHA-256, quantidade de caracteres, data de importação e texto extraído. Arquivos binários originais não são armazenados. Arquivos binários idênticos são rejeitados como duplicados.
 
 **Situação:** o repositório SQLite está conectado à API de importação, consulta, listagem e exclusão. `POST /api/documents/preview` continua sendo **apenas uma prévia**, sem persistência. Para importar, use a documentação interativa em `/docs`, selecione `POST /api/documents`, informe `category` (`transcricao`, `documentacao` ou `outro`), `system` e um arquivo. O arquivo original não é guardado, apenas seu texto extraído. **O SQLite local não oferece criptografia em repouso nem autenticação**, e essas rotas ainda não contam com controle de acesso; mantenha a API restrita a `127.0.0.1` e não importe informações confidenciais sem controles e autorização. A indexação RAG continua planejada.
+
+### Cadastro de artigos por URL na biblioteca
+
+Com Next.js e FastAPI locais em execucao, selecione **Base de conhecimento > Adicionar artigo por link**. Cole o endereco HTTPS de um **artigo individual** do Bimer na ajuda Alterdata e clique em **Adicionar link**. O sistema salva o texto extraido e sua URL original na base SQLite local; o documento aparece na listagem sob a categoria `documentacao` com sistema `Bimer Alterdata`. Clicar em **Abrir artigo original** acessa a fonte. A operacao recusa URLs duplicadas.
+
+**Limites atuais:** nenhuma varredura recursiva da base completa, nenhuma atualizacao automatica de artigos ja importados, nenhum processamento de GIFs/imagens, nenhuma autenticacao e nenhuma pesquisa RAG. A migration adiciona a coluna `source_url` aos bancos SQLite anteriores sem excluir documentos existentes. O upload tradicional segue funcionando. Por enquanto, testes locais e material publico/autorizado apenas. Preparar AD corporativo e importacao Movidesk exige autenticar usuarios e aplicar permissoes reais no backend antes de compartilhar a aplicacao em rede.
 
 ### Teste inicial de documentação por URL
 
